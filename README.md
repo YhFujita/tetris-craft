@@ -66,6 +66,21 @@ PC・スマートフォンの双方に最適化された操作系、クラシッ
 
 ---
 
+## 🚀 オンラインで遊ぶ（GitHub Pages）
+
+スマートフォンやPCのブラウザから以下のURLにアクセスするだけで、インストール不要ですぐにプレイできます。
+
+👉 **[Tetris Craft をプレイする (GitHub Pages)](https://yhfujita.github.io/tetris-craft/)**
+
+### 📱 スマートフォンでの読み取り用 QRコード
+<p align="center">
+  <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://yhfujita.github.io/tetris-craft/" alt="QRコード - Tetris Craft" width="180">
+  <br>
+  <em>スマートフォン等のカメラで読み取って即アクセスできます</em>
+</p>
+
+---
+
 ## 🚀 GitHub Pages での公開手順
 
 本リポジトリは静的Webサイト（HTML/CSS/JS）として構築されているため、GitHub Pages を有効化するだけですぐに世界中に公開できます。
