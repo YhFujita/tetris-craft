@@ -120,7 +120,8 @@ class TetrisGame {
         this.highScore = this.loadHighScore();
         this.lines = 0;
         this.level = 1;
-        this.mode = 'speed_up'; // 'speed_up' (徐々に加速) または 'constant' (速度固定)
+        this.mode = 'speed_up'; // 'speed_up' (徐々に加速), 'constant' (速度固定), 'kids' (かんたん・手動落下)
+        this.fixedSpeedInterval = this.loadFixedSpeed(); // 速度固定モード用の落下間隔 (ms)
         this.isGameOver = false;
         this.isPaused = false;
         this.isPlaying = false;
@@ -158,18 +159,47 @@ class TetrisGame {
         } catch (e) {}
     }
 
+    loadFixedSpeed() {
+        try {
+            const saved = localStorage.getItem('tetris_fixed_speed');
+            return saved ? parseInt(saved, 10) : 700;
+        } catch (e) {
+            return 700;
+        }
+    }
+
+    saveFixedSpeed(val) {
+        try {
+            localStorage.setItem('tetris_fixed_speed', val.toString());
+        } catch (e) {}
+    }
+
     setMode(mode) {
         this.mode = mode;
         this.updateDropInterval();
     }
 
-    updateDropInterval() {
+    setFixedSpeed(intervalMs) {
+        this.fixedSpeedInterval = Math.max(150, Math.min(2000, intervalMs));
+        this.saveFixedSpeed(this.fixedSpeedInterval);
         if (this.mode === 'constant') {
-            // 一定速度モード: 初心者〜中級者が落ち着いて遊べる快適な速度 (約 700ms)
-            this.dropInterval = 700;
+            this.updateDropInterval();
+        }
+    }
+
+    updateDropInterval() {
+        if (this.mode === 'kids') {
+            // かんたんモード (子供向け): 自動落下なし（下キーまたはボタンを押した時のみ落下）
+            this.dropInterval = Infinity;
+            this.lockDelay = 1200; // 接地後も慌てずに操作できるようロック遅延を長めに
+        } else if (this.mode === 'constant') {
+            // 速度固定モード: ユーザーが設定した固定速度 (デフォルト700ms)
+            this.dropInterval = this.fixedSpeedInterval;
+            this.lockDelay = 500;
         } else {
             // 徐々に早くなるモード: レベル1(900ms)からレベル15+(約80ms)まで指数関数的に加速
             this.dropInterval = Math.max(80, Math.pow(0.8 - ((this.level - 1) * 0.007), this.level - 1) * 900);
+            this.lockDelay = 500;
         }
     }
 
@@ -552,6 +582,7 @@ class TetrisGame {
     // ==========================================
     update(time) {
         if (!this.isPlaying || this.isPaused || this.isGameOver || !this.currentPiece) return;
+        if (this.mode === 'kids' || !isFinite(this.dropInterval)) return;
 
         if (time - this.lastDropTime > this.dropInterval) {
             this.moveDown();

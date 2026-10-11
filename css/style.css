@@ -147,6 +147,32 @@ body {
     transition: all 0.2s;
 }
 
+/* 速度固定モード時の速度調整 */
+.speed-adjust-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.speed-slider {
+    width: 75px;
+    height: 6px;
+    accent-color: var(--text-highlight);
+    cursor: pointer;
+}
+
+.speed-val-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-highlight);
+    white-space: nowrap;
+    min-width: 45px;
+}
+
 .styled-select.sm {
     font-size: 0.75rem;
     padding: 3px 6px;
@@ -576,6 +602,22 @@ body {
 
     .header-controls {
         gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .speed-adjust-group {
+        padding: 1px 4px;
+        gap: 4px;
+    }
+
+    .speed-slider {
+        width: 55px;
+    }
+
+    .speed-val-badge {
+        font-size: 0.65rem;
+        min-width: 35px;
     }
 
     .select-group label {

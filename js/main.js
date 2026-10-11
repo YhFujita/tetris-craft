@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const themeSelect = document.getElementById('theme-select');
     const modeSelect = document.getElementById('mode-select');
+    const speedAdjustGroup = document.getElementById('speed-adjust-group');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValLabel = document.getElementById('speed-val-label');
 
     // MIDI UI要素
     const bgmSelect = document.getElementById('bgm-select');
@@ -131,10 +134,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // ゲームモード切り替え
+    // ゲームモード ＆ 速度固定調整
     // ==========================================
+    function updateSpeedLabel(ms) {
+        const sec = (ms / 1000).toFixed(1);
+        let text = `${sec}秒`;
+        if (ms >= 1200) text += ' (超ゆっくり)';
+        else if (ms >= 900) text += ' (ゆっくり)';
+        else if (ms >= 600) text += ' (普通)';
+        else if (ms >= 400) text += ' (速い)';
+        else text += ' (超速)';
+        speedValLabel.textContent = text;
+    }
+
+    function updateSpeedControlVisibility(mode) {
+        if (mode === 'constant') {
+            speedAdjustGroup.style.display = 'flex';
+        } else {
+            speedAdjustGroup.style.display = 'none';
+        }
+    }
+
+    // スライダーの初期値設定
+    speedSlider.value = game.fixedSpeedInterval;
+    updateSpeedLabel(game.fixedSpeedInterval);
+    updateSpeedControlVisibility(modeSelect.value);
+
     modeSelect.addEventListener('change', (e) => {
         game.setMode(e.target.value);
+        updateSpeedControlVisibility(e.target.value);
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        game.setFixedSpeed(val);
+        updateSpeedLabel(val);
     });
 
     // ==========================================

@@ -17,7 +17,7 @@
                 <h1 class="game-title">TETRIS <span class="title-sub">CRAFT</span></h1>
             </div>
 
-            <!-- コントロールバー（スタイル・モード切替） -->
+            <!-- コントロールバー（スタイル・モード・速度切替） -->
             <div class="header-controls">
                 <div class="select-group">
                     <label for="theme-select">スタイル:</label>
@@ -31,7 +31,14 @@
                     <select id="mode-select" class="styled-select">
                         <option value="speed_up">徐々に加速</option>
                         <option value="constant">速度固定</option>
+                        <option value="kids">かんたん (手動落下)</option>
                     </select>
+                </div>
+                <!-- 速度固定モード時の速度調整スライダー -->
+                <div class="select-group speed-adjust-group" id="speed-adjust-group">
+                    <label for="speed-slider">速度:</label>
+                    <input type="range" id="speed-slider" min="200" max="1500" step="50" value="700" class="slider speed-slider" title="落下速度調整 (0.2秒〜1.5秒)">
+                    <span id="speed-val-label" class="speed-val-badge">0.7秒</span>
                 </div>
             </div>
         </header>
@@ -164,7 +171,7 @@
                 <h2 class="modal-title">TETRIS CRAFT</h2>
                 <p class="modal-desc">
                     極上のデザインとエフェクトで楽しむ本格テトリスパズル。<br>
-                    クラシックネオン または 立体木目スタイルを選択してスタート！
+                    お子様もじっくり遊べる「かんたん（手動落下）」モードや速度固定の調整機能も搭載！
                 </p>
                 <button id="btn-start" class="btn modal-btn">GAME START</button>
             </div>
