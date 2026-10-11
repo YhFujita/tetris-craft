@@ -64,28 +64,38 @@ body[data-theme="wood"] {
 }
 
 /* 全体コンテナ */
+html, body {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overscroll-behavior: none;
+    touch-action: none;
+}
+
 body {
     background: var(--bg-main);
     color: var(--text-main);
     font-family: var(--font-body);
-    min-height: 100vh;
-    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow-x: hidden;
     transition: background 0.4s ease, color 0.4s ease;
 }
 
 #app-container {
     width: 100%;
     max-width: 860px;
-    height: 100vh;
+    height: 100%;
     height: 100dvh;
     display: flex;
     flex-direction: column;
     padding: 8px 12px;
     position: relative;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 /* ------------------------------------------
@@ -373,6 +383,9 @@ body {
 
 /* メイン盤面 */
 .board-container {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
     height: 100%;
     display: flex;
     justify-content: center;
@@ -382,6 +395,7 @@ body {
 .main-canvas-wrapper {
     height: 100%;
     max-height: 580px;
+    max-width: 100%;
     aspect-ratio: 1 / 2;
     background: #000;
     border-radius: 8px;
@@ -415,6 +429,31 @@ body {
     display: flex;
     gap: 5px;
     align-items: center;
+}
+
+.dpad-cluster {
+    order: 1;
+}
+
+.center-cluster {
+    order: 2;
+}
+
+.action-cluster {
+    order: 3;
+}
+
+/* 矢印ボタンと回転ボタンの位置入れ替え（スワップ） */
+.virtual-controller.swapped .dpad-cluster {
+    order: 3;
+}
+
+.virtual-controller.swapped .center-cluster {
+    order: 2;
+}
+
+.virtual-controller.swapped .action-cluster {
+    order: 1;
 }
 
 .dpad-row {
@@ -488,13 +527,47 @@ body {
     font-size: 0.62rem;
 }
 
-.mobile-swipe-hint {
+.mobile-controls-bar {
     display: none;
-    text-align: center;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 4px;
+    flex-shrink: 0;
+}
+
+.mobile-swipe-hint {
     font-size: 0.65rem;
     color: var(--text-sub);
-    padding-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-layout-swap {
+    background: var(--btn-bg);
+    border: var(--btn-border);
+    color: var(--btn-text);
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    touch-action: manipulation;
+    transition: all 0.15s ease;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.btn-layout-swap:active {
+    background: var(--btn-active-bg);
+    color: var(--btn-active-text);
+    transform: scale(0.94);
 }
 
 /* ------------------------------------------
@@ -677,8 +750,11 @@ body {
     }
 
     .main-canvas-wrapper {
-        max-height: calc(100vh - 210px);
-        max-height: calc(100dvh - 210px);
+        max-height: calc(100vh - 200px);
+        max-height: calc(100dvh - 200px);
+        max-width: 100%;
+        /* 縦横比 1:2 を保持しながら、画面の横幅にも縦幅にも必ず収める */
+        width: min(calc((100dvh - 200px) / 2), 100%);
     }
 
     /* スマホオンスクリーンコントローラー表示 */
@@ -686,8 +762,8 @@ body {
         display: flex;
     }
 
-    .mobile-swipe-hint {
-        display: block;
+    .mobile-controls-bar {
+        display: flex;
     }
 
     .arrow-btn {

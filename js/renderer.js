@@ -40,6 +40,19 @@ class TetrisRenderer {
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.resize(), 100);
+        });
+
+        // 要素自体のサイズ変動を常時監視
+        if (window.ResizeObserver) {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.resize();
+            });
+            this.resizeObserver.observe(this.canvas);
+            const parent = this.canvas.parentElement;
+            if (parent) this.resizeObserver.observe(parent);
+        }
     }
 
     setStyle(style) {
@@ -55,8 +68,12 @@ class TetrisRenderer {
         const rect = this.canvas.getBoundingClientRect();
         
         if (rect.width > 0 && rect.height > 0) {
-            this.canvas.width = rect.width * dpr;
-            this.canvas.height = rect.height * dpr;
+            const targetW = Math.round(rect.width * dpr);
+            const targetH = Math.round(rect.height * dpr);
+            if (this.canvas.width !== targetW || this.canvas.height !== targetH) {
+                this.canvas.width = targetW;
+                this.canvas.height = targetH;
+            }
             this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
 
@@ -68,8 +85,12 @@ class TetrisRenderer {
             if (canv) {
                 const cRect = canv.getBoundingClientRect();
                 if (cRect.width > 0 && cRect.height > 0) {
-                    canv.width = cRect.width * dpr;
-                    canv.height = cRect.height * dpr;
+                    const cTargetW = Math.round(cRect.width * dpr);
+                    const cTargetH = Math.round(cRect.height * dpr);
+                    if (canv.width !== cTargetW || canv.height !== cTargetH) {
+                        canv.width = cTargetW;
+                        canv.height = cTargetH;
+                    }
                     const cCtx = canv.getContext('2d');
                     cCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 }
@@ -173,7 +194,18 @@ class TetrisRenderer {
     // メイン描画ループ
     // ==========================================
     render(game, timestamp) {
+        const dpr = window.devicePixelRatio || 1;
         const rect = this.canvas.getBoundingClientRect();
+
+        // 内部解像度と現在のCSS表示サイズがズレている場合は自動で再計算・同期
+        if (rect.width > 0 && rect.height > 0) {
+            const expectedW = Math.round(rect.width * dpr);
+            const expectedH = Math.round(rect.height * dpr);
+            if (Math.abs(this.canvas.width - expectedW) > 1 || Math.abs(this.canvas.height - expectedH) > 1) {
+                this.resize();
+            }
+        }
+
         const width = rect.width;
         const height = rect.height;
         const blockW = width / BOARD_COLS;

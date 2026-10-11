@@ -160,9 +160,13 @@
             </div>
         </nav>
 
-        <!-- モバイル向けスワイプガイド通知（初期表示） -->
-        <div class="mobile-swipe-hint">
-            <span>👆 盤面スワイプ: 左右移動・下落下 / タップ: 回転</span>
+        <!-- モバイル向けコントロール補助バー（スワイプ案内 ＆ ボタン配置切替） -->
+        <div class="mobile-controls-bar">
+            <span class="mobile-swipe-hint">👆 盤面スワイプ: 左右移動・下落下 / タップ: 回転</span>
+            <button id="btn-toggle-layout" class="btn-layout-swap" type="button" aria-label="矢印と回転ボタンの位置を入れ替える">
+                <span class="swap-icon">⇄</span>
+                <span id="btn-layout-text" class="swap-text">ボタン入替</span>
+            </button>
         </div>
 
         <!-- スタートモーダル -->

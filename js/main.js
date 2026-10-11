@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalScoreVal = document.getElementById('final-score-val');
     const finalHighScoreVal = document.getElementById('final-high-score-val');
 
+    // スマホ用コントローラー要素
+    const virtualController = document.getElementById('virtual-controller');
+    const btnToggleLayout = document.getElementById('btn-toggle-layout');
+    const btnLayoutText = document.getElementById('btn-layout-text');
+
     // インスタンス生成
     const game = new TetrisGame();
     const renderer = new TetrisRenderer(mainCanvas, holdCanvas, nextCanvas);
@@ -46,6 +51,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ハイスコア初期表示
     highScoreVal.textContent = game.highScore.toLocaleString();
+
+    // ==========================================
+    // スマホ版コントローラー配置切り替え (矢印 ⇄ 回転)
+    // ==========================================
+    function updateControllerLayout(isSwapped) {
+        if (!virtualController) return;
+        if (isSwapped) {
+            virtualController.classList.add('swapped');
+            if (btnLayoutText) btnLayoutText.textContent = '配置: ↺[左] ◀[右]';
+        } else {
+            virtualController.classList.remove('swapped');
+            if (btnLayoutText) btnLayoutText.textContent = '配置: ◀[左] ↺[右]';
+        }
+    }
+
+    // 保存された配置の読み込み
+    const savedLayout = localStorage.getItem('tetris_controller_swapped') === 'true';
+    updateControllerLayout(savedLayout);
+
+    if (btnToggleLayout) {
+        btnToggleLayout.addEventListener('click', (e) => {
+            e.preventDefault();
+            const currentlySwapped = virtualController.classList.contains('swapped');
+            const nextState = !currentlySwapped;
+            updateControllerLayout(nextState);
+            localStorage.setItem('tetris_controller_swapped', nextState.toString());
+            if (sound) sound.init();
+        });
+    }
 
     // ==========================================
     // ゲームイベントとサウンド・演出の連携
@@ -265,6 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gameOverModal.classList.add('hidden');
         pauseModal.classList.add('hidden');
 
+        // モーダルが非表示になった直後に正確な盤面サイズへ再同期
+        renderer.resize();
+
         game.setMode(modeSelect.value);
         applyTheme(themeSelect.value);
         game.start();
@@ -280,6 +317,17 @@ document.addEventListener('DOMContentLoaded', () => {
     btnResume.addEventListener('click', () => {
         game.pause();
     });
+
+    // 初期表示時のCanvasサイズ自動同期（フォントやCSSレイアウトの遅延ロードに対応）
+    const ensureResized = () => {
+        renderer.resize();
+    };
+    setTimeout(ensureResized, 60);
+    setTimeout(ensureResized, 300);
+    window.addEventListener('load', ensureResized);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(ensureResized);
+    }
 
     // ==========================================
     // メインループ (requestAnimationFrame)

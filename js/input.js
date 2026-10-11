@@ -155,10 +155,20 @@ class InputManager {
     // スマートフォン タッチスワイプ操作
     // ==========================================
     initTouchGestures() {
+        // 画面全体の意図しないスクロール・プルリフレッシュ・バウンスを完全に固定
+        document.addEventListener('touchmove', (e) => {
+            // スライダーやセレクトボックス等、明示的なフォーム操作は許可
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+                return;
+            }
+            e.preventDefault();
+        }, { passive: false });
+
         if (!this.canvas) return;
 
         this.canvas.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
+                e.preventDefault(); // ブラウザ標準の長押し選択・ズーム・ジェスチャーを防止
                 const touch = e.touches[0];
                 this.touchStartX = touch.clientX;
                 this.touchStartY = touch.clientY;
@@ -173,8 +183,8 @@ class InputManager {
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // 画面スクロールを完全に防止
             if (!this.game.isPlaying || this.game.isPaused) return;
-            e.preventDefault(); // 画面スクロール防止
 
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
@@ -204,6 +214,7 @@ class InputManager {
         }, { passive: false });
 
         this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
             if (!this.game.isPlaying || this.game.isPaused) return;
 
             const touchDuration = performance.now() - this.touchStartTime;
@@ -212,15 +223,19 @@ class InputManager {
             const totalDist = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
 
             // 1. タップ判定 (移動がほとんどなく短時間での離脱 → 回転)
-            if (totalDist < 12 && touchDuration < 300) {
+            if (totalDist < 14 && touchDuration < 320) {
                 this.game.rotate(1);
                 this.vibrate(10);
             }
             // 2. 上方向への素早いフリック → ハードドロップ または 回転
-            else if (totalDy < -50 && Math.abs(totalDx) < 40 && touchDuration < 250) {
+            else if (totalDy < -45 && Math.abs(totalDx) < 40 && touchDuration < 280) {
                 this.game.rotate(1);
                 this.vibrate(12);
             }
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
         }, { passive: false });
     }
 
