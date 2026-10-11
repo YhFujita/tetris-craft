@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tetris Craft - 美麗テトリス＆MIDI音源</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
+</head>
+<body data-theme="classic">
+    <div id="app-container">
+        <!-- トップヘッダー -->
+        <header class="app-header">
+            <div class="logo-area">
+                <h1 class="game-title">TETRIS <span class="title-sub">CRAFT</span></h1>
+            </div>
+
+            <!-- コントロールバー（スタイル・モード切替） -->
+            <div class="header-controls">
+                <div class="select-group">
+                    <label for="theme-select">スタイル:</label>
+                    <select id="theme-select" class="styled-select">
+                        <option value="classic">クラシック (ネオン)</option>
+                        <option value="wood">木目 (立体彫刻)</option>
+                    </select>
+                </div>
+                <div class="select-group">
+                    <label for="mode-select">モード:</label>
+                    <select id="mode-select" class="styled-select">
+                        <option value="speed_up">徐々に加速</option>
+                        <option value="constant">速度固定</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- MIDI オーディオプレイヤー パネル -->
+        <section class="midi-panel">
+            <div class="midi-info">
+                <span class="music-icon">🎵</span>
+                <span id="midi-status" class="midi-title">再生中: コロブチカ</span>
+            </div>
+            <div class="midi-controls">
+                <select id="bgm-select" class="styled-select sm">
+                    <option value="korobeiniki">BGM: コロブチカ</option>
+                    <option value="woodland">BGM: 木漏れ日 (和風/木工)</option>
+                </select>
+                <button id="btn-bgm-toggle" class="btn sm" data-playing="true">⏸ BGM 停止</button>
+                <label for="midi-file-input" class="btn sm file-btn">📁 MIDI読込</label>
+                <input type="file" id="midi-file-input" accept=".mid,.midi" style="display: none;">
+
+                <div class="vol-control">
+                    <span>BGM</span>
+                    <input type="range" id="bgm-volume" min="0" max="1" step="0.05" value="0.4" class="slider">
+                </div>
+                <div class="vol-control">
+                    <span>SE</span>
+                    <input type="range" id="se-volume" min="0" max="1" step="0.05" value="0.5" class="slider">
+                </div>
+            </div>
+        </section>
+
+        <!-- ゲームメインエリア -->
+        <main class="game-layout">
+            <!-- 左サイドパネル (HOLD & スコア情報) -->
+            <aside class="side-panel left-panel">
+                <div class="panel-box hold-box">
+                    <h3 class="panel-title">HOLD</h3>
+                    <div class="canvas-wrapper sub-canvas">
+                        <canvas id="hold-canvas" width="90" height="70"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel-box stats-box">
+                    <div class="stat-item">
+                        <span class="stat-label">SCORE</span>
+                        <span id="score-val" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item highlight">
+                        <span class="stat-label">HIGH SCORE</span>
+                        <span id="high-score-val" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-item mini">
+                            <span class="stat-label">LEVEL</span>
+                            <span id="level-val" class="stat-value">1</span>
+                        </div>
+                        <div class="stat-item mini">
+                            <span class="stat-label">LINES</span>
+                            <span id="lines-val" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 中央メイン盤面 -->
+            <section class="board-container">
+                <div class="canvas-wrapper main-canvas-wrapper">
+                    <canvas id="board-canvas" width="300" height="600"></canvas>
+                </div>
+            </section>
+
+            <!-- 右サイドパネル (NEXT & 操作ガイド) -->
+            <aside class="side-panel right-panel">
+                <div class="panel-box next-box">
+                    <h3 class="panel-title">NEXT</h3>
+                    <div class="canvas-wrapper sub-canvas next-canvas-wrapper">
+                        <canvas id="next-canvas" width="90" height="210"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel-box guide-box pc-guide">
+                    <h3 class="panel-title">操作方法</h3>
+                    <ul class="guide-list">
+                        <li><span>← →</span> : 移動</li>
+                        <li><span>↑ / Space</span> : 回転</li>
+                        <li><span>↓</span> : ソフトドロップ</li>
+                        <li><span>Enter / W</span> : ハード落下</li>
+                        <li><span>C / Shift</span> : ホールド</li>
+                    </ul>
+                </div>
+            </aside>
+        </main>
+
+        <!-- スマホ用オンスクリーン コントローラー (バーチャルパッド) -->
+        <nav class="virtual-controller" id="virtual-controller" aria-label="モバイルコントローラー">
+            <!-- 左手側：移動操作パッド -->
+            <div class="pad-cluster dpad-cluster">
+                <div class="dpad-row">
+                    <button id="btn-left" class="v-btn arrow-btn" aria-label="左移動">◀</button>
+                    <button id="btn-down" class="v-btn arrow-btn" aria-label="ソフトドロップ">▼</button>
+                    <button id="btn-right" class="v-btn arrow-btn" aria-label="右移動">▶</button>
+                </div>
+            </div>
+
+            <!-- 中央：即座落下（ハードドロップ） -->
+            <div class="pad-cluster center-cluster">
+                <button id="btn-hard-drop" class="v-btn hard-drop-btn" aria-label="ハードドロップ">
+                    <span class="btn-icon">⤓</span>
+                    <span class="btn-text">落下</span>
+                </button>
+                <button id="btn-hold" class="v-btn hold-btn" aria-label="ホールド">
+                    <span class="btn-text">HOLD</span>
+                </button>
+            </div>
+
+            <!-- 右手側：回転ボタン -->
+            <div class="pad-cluster action-cluster">
+                <button id="btn-rotate-ccw" class="v-btn action-btn sub" aria-label="反時計回り回転">↺</button>
+                <button id="btn-rotate-cw" class="v-btn action-btn main" aria-label="回転">↻</button>
+            </div>
+        </nav>
+
+        <!-- モバイル向けスワイプガイド通知（初期表示） -->
+        <div class="mobile-swipe-hint">
+            <span>👆 盤面スワイプ: 左右移動・下落下 / タップ: 回転</span>
+        </div>
+
+        <!-- スタートモーダル -->
+        <div id="start-modal" class="modal-overlay">
+            <div class="modal-card">
+                <h2 class="modal-title">TETRIS CRAFT</h2>
+                <p class="modal-desc">
+                    極上のデザインとエフェクトで楽しむ本格テトリスパズル。<br>
+                    クラシックネオン または 立体木目スタイルを選択してスタート！
+                </p>
+                <button id="btn-start" class="btn modal-btn">GAME START</button>
+            </div>
+        </div>
+
+        <!-- 一時停止モーダル -->
+        <div id="pause-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <h2 class="modal-title">PAUSED</h2>
+                <p class="modal-desc">一時停止中</p>
+                <button id="btn-resume" class="btn modal-btn">再開する</button>
+            </div>
+        </div>
+
+        <!-- ゲームオーバーモーダル -->
+        <div id="game-over-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <h2 class="modal-title gameover-title">GAME OVER</h2>
+                <div class="modal-stats">
+                    <div class="modal-stat-row">
+                        <span>スコア:</span>
+                        <strong id="final-score-val">0</strong>
+                    </div>
+                    <div class="modal-stat-row highlight">
+                        <span>ハイスコア:</span>
+                        <strong id="final-high-score-val">0</strong>
+                    </div>
+                </div>
+                <button id="btn-restart" class="btn modal-btn">もう一度遊ぶ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- スクリプト群 -->
+    <script src="js/audio.js"></script>
+    <script src="js/tetris.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,696 @@
+/* ==========================================
+   Tetris Craft - スタイルシート
+   クラシック (Neon Cyber) / 木目 (Wood Craft 立体彫刻)
+   ========================================== */
+
+/* リセット＆基本設定 */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+:root {
+    --vh: 100vh;
+}
+
+/* ------------------------------------------
+   テーマ変数: クラシックスタイル (デフォルト)
+   ------------------------------------------ */
+body[data-theme="classic"] {
+    --bg-main: radial-gradient(circle at 50% 20%, #151d38 0%, #070913 100%);
+    --bg-panel: rgba(16, 23, 44, 0.75);
+    --panel-border: 1px solid rgba(0, 240, 255, 0.25);
+    --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(0, 240, 255, 0.08);
+    --text-main: #f0f6fc;
+    --text-sub: #79c0ff;
+    --text-highlight: #00f0ff;
+    --accent-glow: 0 0 15px rgba(0, 240, 255, 0.6);
+    --font-head: 'Orbitron', 'M PLUS Rounded 1c', sans-serif;
+    --font-body: 'M PLUS Rounded 1c', sans-serif;
+    --btn-bg: linear-gradient(135deg, #1e293b, #0f172a);
+    --btn-border: 1px solid #38bdf8;
+    --btn-text: #38bdf8;
+    --btn-active-bg: #38bdf8;
+    --btn-active-text: #0f172a;
+    --board-border: 2px solid rgba(0, 240, 255, 0.4);
+    --board-shadow: 0 0 25px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 0, 0, 0.8);
+}
+
+/* ------------------------------------------
+   テーマ変数: 木目スタイル (Wood Craft 立体彫刻)
+   ------------------------------------------ */
+body[data-theme="wood"] {
+    --bg-main: radial-gradient(circle at 50% 30%, #3e2719 0%, #1a0f08 100%);
+    --bg-panel: rgba(45, 30, 20, 0.85);
+    --panel-border: 1px solid rgba(212, 175, 55, 0.35);
+    --panel-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.05);
+    --text-main: #faedcd;
+    --text-sub: #d4a373;
+    --text-highlight: #f3c64c;
+    --accent-glow: 0 0 15px rgba(243, 198, 76, 0.4);
+    --font-head: 'Shippori Mincho', 'M PLUS Rounded 1c', serif;
+    --font-body: 'M PLUS Rounded 1c', 'Shippori Mincho', sans-serif;
+    --btn-bg: linear-gradient(180deg, #603d29 0%, #422818 100%);
+    --btn-border: 1px solid #9c6c42;
+    --btn-text: #faedcd;
+    --btn-active-bg: #82502f;
+    --btn-active-text: #fff;
+    --board-border: 3px solid #8c6046;
+    --board-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.9);
+}
+
+/* 全体コンテナ */
+body {
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+#app-container {
+    width: 100%;
+    max-width: 860px;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    position: relative;
+}
+
+/* ------------------------------------------
+   ヘッダー
+   ------------------------------------------ */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--bg-panel);
+    border: var(--panel-border);
+    border-radius: 12px;
+    box-shadow: var(--panel-shadow);
+    backdrop-filter: blur(8px);
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+
+.game-title {
+    font-family: var(--font-head);
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--text-highlight);
+    text-shadow: var(--accent-glow);
+}
+
+.title-sub {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    color: var(--text-main);
+}
+
+.header-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.select-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: var(--text-sub);
+}
+
+.styled-select {
+    background: var(--btn-bg);
+    border: var(--btn-border);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.styled-select.sm {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+}
+
+/* ------------------------------------------
+   MIDI パネル
+   ------------------------------------------ */
+.midi-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    background: var(--bg-panel);
+    border: var(--panel-border);
+    border-radius: 8px;
+    box-shadow: var(--panel-shadow);
+    backdrop-filter: blur(8px);
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.midi-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.midi-title {
+    color: var(--text-highlight);
+    font-weight: 700;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.midi-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--btn-bg);
+    border: var(--btn-border);
+    color: var(--btn-text);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+.btn.sm {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+}
+
+.btn:active {
+    background: var(--btn-active-bg);
+    color: var(--btn-active-text);
+    transform: scale(0.96);
+}
+
+.vol-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: var(--text-sub);
+}
+
+.slider {
+    width: 50px;
+    accent-color: var(--text-highlight);
+    cursor: pointer;
+}
+
+/* ------------------------------------------
+   ゲームレイアウト (盤面 & サイドパネル)
+   ------------------------------------------ */
+.game-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-height: 0; /* flex縮小を有効化 */
+    position: relative;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 110px;
+    flex-shrink: 0;
+}
+
+.panel-box {
+    background: var(--bg-panel);
+    border: var(--panel-border);
+    border-radius: 10px;
+    box-shadow: var(--panel-shadow);
+    backdrop-filter: blur(8px);
+    padding: 8px;
+    text-align: center;
+}
+
+.panel-title {
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    color: var(--text-sub);
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 2px;
+}
+
+.canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sub-canvas canvas {
+    display: block;
+    max-width: 100%;
+}
+
+/* スコア統計表示 */
+.stats-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: var(--text-sub);
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: var(--font-head);
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--text-main);
+}
+
+.stat-item.highlight .stat-value {
+    color: var(--text-highlight);
+    text-shadow: var(--accent-glow);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 4px;
+}
+
+.stat-item.mini .stat-value {
+    font-size: 0.85rem;
+}
+
+/* ガイドボックス */
+.guide-list {
+    list-style: none;
+    font-size: 0.68rem;
+    text-align: left;
+    color: var(--text-sub);
+    line-height: 1.5;
+}
+
+.guide-list span {
+    color: var(--text-highlight);
+    font-weight: bold;
+}
+
+/* メイン盤面 */
+.board-container {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-canvas-wrapper {
+    height: 100%;
+    max-height: 580px;
+    aspect-ratio: 1 / 2;
+    background: #000;
+    border-radius: 8px;
+    border: var(--board-border);
+    box-shadow: var(--board-shadow);
+    overflow: hidden;
+    position: relative;
+    touch-action: none; /* スワイプ時のブラウザ画面スクロールを完全に無効化 */
+}
+
+#board-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ------------------------------------------
+   スマホ用オンスクリーン コントローラー (バーチャルパッド)
+   ------------------------------------------ */
+.virtual-controller {
+    display: none; /* デスクトップでは非表示 */
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 4px 8px 4px;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.pad-cluster {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.dpad-row {
+    display: flex;
+    gap: 5px;
+}
+
+.v-btn {
+    border-radius: 12px;
+    background: var(--btn-bg);
+    border: var(--btn-border);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    font-weight: 900;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.08s ease, background 0.08s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.v-btn:active {
+    transform: scale(0.92);
+    background: var(--btn-active-bg);
+    color: var(--btn-active-text);
+}
+
+/* 各種バーチャルボタンのサイズ */
+.arrow-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.1rem;
+}
+
+.action-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+}
+
+.action-btn.sub {
+    width: 44px;
+    height: 44px;
+    font-size: 1.05rem;
+    opacity: 0.85;
+}
+
+.hard-drop-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 0.75rem;
+}
+
+.hold-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+}
+
+.btn-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+.btn-text {
+    font-size: 0.62rem;
+}
+
+.mobile-swipe-hint {
+    display: none;
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--text-sub);
+    padding-bottom: 2px;
+    flex-shrink: 0;
+}
+
+/* ------------------------------------------
+   モーダルダイアログ
+   ------------------------------------------ */
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+    transition: opacity 0.25s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-card {
+    background: var(--bg-panel);
+    border: var(--panel-border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-title {
+    font-family: var(--font-head);
+    font-size: 1.5rem;
+    color: var(--text-highlight);
+    text-shadow: var(--accent-glow);
+    margin-bottom: 10px;
+}
+
+.modal-title.gameover-title {
+    color: #ef4444;
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+
+.modal-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-main);
+    margin-bottom: 18px;
+}
+
+.modal-stats {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.modal-stat-row.highlight strong {
+    color: var(--text-highlight);
+}
+
+.modal-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 10px;
+    letter-spacing: 1px;
+}
+
+/* ------------------------------------------
+   レスポンシブ対応 (スマートフォン縦画面)
+   ------------------------------------------ */
+@media (max-width: 768px) {
+    #app-container {
+        padding: 4px 6px;
+    }
+
+    .app-header {
+        padding: 4px 8px;
+        margin-bottom: 4px;
+    }
+
+    .game-title {
+        font-size: 1.1rem;
+    }
+
+    .header-controls {
+        gap: 6px;
+    }
+
+    .select-group label {
+        display: none; /* ラベル省略でコンパクト化 */
+    }
+
+    .midi-panel {
+        padding: 3px 6px;
+        margin-bottom: 4px;
+        font-size: 0.7rem;
+    }
+
+    .vol-control {
+        display: none; /* スマホ画面では音量はOS音量または必要時のみ */
+    }
+
+    /* ゲームレイアウト: 盤面を中心にしてサイドパネルをスリム化 */
+    .game-layout {
+        gap: 6px;
+        flex: 1;
+    }
+
+    .side-panel {
+        width: 68px;
+        gap: 4px;
+    }
+
+    .pc-guide {
+        display: none; /* スマホでは操作ガイドを非表示 */
+    }
+
+    .panel-box {
+        padding: 4px;
+        border-radius: 8px;
+    }
+
+    .panel-title {
+        font-size: 0.65rem;
+        margin-bottom: 2px;
+    }
+
+    .stat-label {
+        font-size: 0.58rem;
+    }
+
+    .stat-value {
+        font-size: 0.85rem;
+    }
+
+    .stat-item.highlight .stat-value {
+        font-size: 0.88rem;
+    }
+
+    .stat-row {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .main-canvas-wrapper {
+        max-height: calc(100vh - 210px);
+        max-height: calc(100dvh - 210px);
+    }
+
+    /* スマホオンスクリーンコントローラー表示 */
+    .virtual-controller {
+        display: flex;
+    }
+
+    .mobile-swipe-hint {
+        display: block;
+    }
+
+    .arrow-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.0rem;
+    }
+
+    .action-btn {
+        width: 46px;
+        height: 46px;
+        font-size: 1.15rem;
+    }
+
+    .action-btn.sub {
+        width: 40px;
+        height: 40px;
+        font-size: 0.95rem;
+    }
+
+    .hard-drop-btn, .hold-btn {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+/* 超小型スマホ (幅360px以下) の微調整 */
+@media (max-width: 360px) {
+    .side-panel {
+        width: 58px;
+    }
+    .arrow-btn {
+        width: 38px;
+        height: 38px;
+    }
+    .action-btn {
+        width: 40px;
+        height: 40px;
+    }
+    .action-btn.sub {
+        width: 36px;
+        height: 36px;
+    }
+    .hard-drop-btn, .hold-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
