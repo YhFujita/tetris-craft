@@ -24,7 +24,8 @@ class SoundController {
         this.playbackTimer = null;
 
         // プリセットBGMリスト
-        this.currentPreset = 'korobeiniki';
+        this.currentPreset = 'medley';
+        this.compressor = null;
 
         this.initialized = false;
     }
@@ -37,9 +38,18 @@ class SoundController {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = new AudioContext();
 
+        // マスターコンプレッサー（音割れ防止 & 音圧と厚みの向上）
+        this.compressor = this.ctx.createDynamicsCompressor();
+        this.compressor.threshold.setValueAtTime(-14, this.ctx.currentTime);
+        this.compressor.knee.setValueAtTime(30, this.ctx.currentTime);
+        this.compressor.ratio.setValueAtTime(10, this.ctx.currentTime);
+        this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+        this.compressor.release.setValueAtTime(0.25, this.ctx.currentTime);
+
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
-        this.masterGain.connect(this.ctx.destination);
+        this.masterGain.connect(this.compressor);
+        this.compressor.connect(this.ctx.destination);
 
         this.bgmGain = this.ctx.createGain();
         this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
@@ -308,27 +318,84 @@ class SoundController {
         const vel = Math.max(0.1, Math.min(1.0, (velocity || 64) / 127));
 
         if (style === 'wood') {
-            // 木目調スタイル: カリンバ・木琴・マリンバのような温かみのあるポクポクしたアコースティック音
-            osc.type = 'sine';
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(freq * 3, time);
+            // 木目調スタイル: カリンバ・木琴・マリンバのような温かみのあるアコースティック音
+            if (channel === 1) {
+                // ベース: ウッドベース風の低域
+                osc.type = 'triangle';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(Math.min(900, freq * 3), time);
 
-            // アタックが速く、短めのディケイ
-            gain.gain.setValueAtTime(0.001, time);
-            gain.gain.linearRampToValueAtTime(vel * 0.35, time + 0.008);
-            gain.gain.exponentialRampToValueAtTime(vel * 0.1, time + 0.08);
-            gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.45));
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.35, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.15, time + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.6));
+            } else if (channel === 2) {
+                // コード伴奏: 軽やかなポクポクした木琴スタッカート
+                osc.type = 'sine';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(freq * 2.5, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.22, time + 0.008);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.05, time + 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.22));
+            } else {
+                // メロディ & ハーモニー
+                osc.type = 'sine';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(freq * 3, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.32, time + 0.008);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.1, time + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.45));
+            }
         } else {
-            // クラシックスタイル: レトロな8-bit/FMシンセ風（パルス波/矩形波）
-            osc.type = channel === 9 ? 'triangle' : (channel % 2 === 0 ? 'square' : 'sawtooth');
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(3500, time);
+            // クラシックスタイル: レトロな8-bit/FMシンセ風（パルス波/矩形波/重低音）
+            if (channel === 1) {
+                // ベース: 太い三角波とフィルターでしっかりボトムを支える
+                osc.type = 'triangle';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(900, time);
 
-            gain.gain.setValueAtTime(0.001, time);
-            gain.gain.linearRampToValueAtTime(vel * 0.22, time + 0.01);
-            gain.gain.exponentialRampToValueAtTime(vel * 0.14, time + 0.05);
-            gain.gain.setValueAtTime(vel * 0.14, time + Math.max(0.05, duration - 0.04));
-            gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.3, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.2, time + 0.06);
+                gain.gain.setValueAtTime(vel * 0.2, time + Math.max(0.05, duration - 0.03));
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            } else if (channel === 2) {
+                // 和音コード伴奏: 歯切れの良いスタッカート（裏拍のアコーディオン/バラライカ的刻み）
+                osc.type = 'square';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2600, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.15, time + 0.008);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.08, time + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.2));
+            } else if (channel === 3) {
+                // ハーモニー/対旋律: 豊かな倍音を持つノコギリ波
+                osc.type = 'sawtooth';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3200, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.16, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.1, time + 0.05);
+                gain.gain.setValueAtTime(vel * 0.1, time + Math.max(0.05, duration - 0.04));
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            } else {
+                // チャンネル0: メインリードメロディ（クリアな矩形波）
+                osc.type = channel === 9 ? 'triangle' : 'square';
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3600, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.22, time + 0.01);
+                gain.gain.exponentialRampToValueAtTime(vel * 0.14, time + 0.05);
+                gain.gain.setValueAtTime(vel * 0.14, time + Math.max(0.05, duration - 0.04));
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            }
         }
 
         osc.frequency.setValueAtTime(freq, time);
@@ -454,10 +521,16 @@ class SoundController {
         this.stopBgm();
         this.currentPreset = name;
 
-        if (name === 'korobeiniki') {
+        if (name === 'medley') {
+            this.currentTrackNotes = this.getMedleyData();
+        } else if (name === 'korobeiniki') {
             this.currentTrackNotes = this.getKorobeinikiData();
+        } else if (name === 'troika') {
+            this.currentTrackNotes = this.getTroikaData();
         } else if (name === 'woodland') {
             this.currentTrackNotes = this.getWoodlandData();
+        } else {
+            this.currentTrackNotes = this.getMedleyData();
         }
 
         // 全体の長さを算出
@@ -465,16 +538,62 @@ class SoundController {
     }
 
     /**
-     * コロブチカ（Tetris Theme A）のMIDIノートデータ
+     * コロブチカ ＆ トロイカ の豪華メドレー
+     */
+    getMedleyData() {
+        const koroNotes = this.getKorobeinikiData();
+        const troikaNotes = this.getTroikaData();
+
+        // コロブチカの終了時間を基準にトロイカをスムーズに連結（0.3秒のブレイク）
+        const koroEnd = Math.max(...koroNotes.map(n => n.time + n.duration));
+        const offset = koroEnd + 0.3;
+
+        const shiftedTroika = troikaNotes.map(n => ({
+            ...n,
+            time: n.time + offset
+        }));
+
+        const combined = [...koroNotes, ...shiftedTroika];
+        return combined.sort((a, b) => a.time - b.time);
+    }
+
+    /**
+     * コロブチカ（Tetris Theme A）- 和音・対旋律強化版
      */
     getKorobeinikiData() {
         const bpm = 144;
-        const beat = 60 / bpm; // 1拍の秒数
+        const beat = 60 / bpm;
         const eighth = beat / 2; // 8分音符
 
-        // [note, durationInEighths]
-        const melody = [
-            // Aパート
+        const notes = [];
+
+        // ヘルパー: ノート追加
+        const addNote = (timeEighth, note, durEighth, vel = 95, ch = 0) => {
+            notes.push({
+                time: timeEighth * eighth,
+                note: note,
+                duration: durEighth * eighth * 0.9,
+                velocity: vel,
+                channel: ch
+            });
+        };
+
+        // ヘルパー: 和音コード追加 (裏拍のポルカ伴奏)
+        const addChord = (timeEighth, chordNotes, durEighth = 1.0, vel = 60) => {
+            chordNotes.forEach(n => {
+                notes.push({
+                    time: timeEighth * eighth,
+                    note: n,
+                    duration: durEighth * eighth * 0.85,
+                    velocity: vel,
+                    channel: 2
+                });
+            });
+        };
+
+        // 16小節分のメロディ [note, lenInEighths]
+        const melodyPhrases = [
+            // 小節 1〜8 (1周目)
             [76, 2], [71, 1], [72, 1], [74, 2], [72, 1], [71, 1], // E5, B4, C5, D5, C5, B4
             [69, 2], [69, 1], [72, 1], [76, 2], [74, 1], [72, 1], // A4, A4, C5, E5, D5, C5
             [71, 3], [72, 1], [74, 2], [76, 2],                   // B4, C5, D5, E5
@@ -485,7 +604,7 @@ class SoundController {
             [71, 2], [71, 1], [72, 1], [74, 2], [76, 2],          // B4, B4, C5, D5, E5
             [72, 2], [69, 2], [69, 4],                             // C5, A4, A4
 
-            // リピート Bパート
+            // 小節 9〜16 (2周目・リピート展開)
             [76, 2], [71, 1], [72, 1], [74, 2], [72, 1], [71, 1],
             [69, 2], [69, 1], [72, 1], [76, 2], [74, 1], [72, 1],
             [71, 3], [72, 1], [74, 2], [76, 2],
@@ -497,54 +616,235 @@ class SoundController {
             [72, 2], [69, 2], [69, 4]
         ];
 
-        // ベースライン
-        const bass = [
-            // E-Am-E-Am パターン
-            [52, 2], [52, 2], [47, 2], [47, 2],
-            [45, 2], [45, 2], [48, 2], [48, 2],
-            [47, 2], [47, 2], [52, 2], [52, 2],
-            [48, 2], [45, 2], [45, 4],
+        let mTime = 0;
+        for (const [n, len] of melodyPhrases) {
+            addNote(mTime, n, len, 95, 0);
+            mTime += len;
+        }
 
-            [50, 2], [50, 2], [53, 2], [53, 2],
-            [52, 2], [52, 2], [48, 2], [48, 2],
-            [47, 2], [47, 2], [52, 2], [52, 2],
-            [48, 2], [45, 2], [45, 4],
+        // 2周目（小節9〜16: mTime 64〜128）のハーモニー対旋律 (channel 3)
+        const harmonyPhrases = [
+            [72, 2], [68, 1], [69, 1], [71, 2], [69, 1], [68, 1],
+            [64, 2], [64, 1], [69, 1], [72, 2], [71, 1], [69, 1],
+            [68, 3], [69, 1], [71, 2], [68, 2],
+            [69, 2], [64, 2], [64, 4],
 
-            [52, 2], [52, 2], [47, 2], [47, 2],
-            [45, 2], [45, 2], [48, 2], [48, 2],
-            [47, 2], [47, 2], [52, 2], [52, 2],
-            [48, 2], [45, 2], [45, 4],
-
-            [50, 2], [50, 2], [53, 2], [53, 2],
-            [52, 2], [52, 2], [48, 2], [48, 2],
-            [47, 2], [47, 2], [52, 2], [52, 2],
-            [48, 2], [45, 2], [45, 4]
+            [69, 3], [74, 1], [77, 2], [76, 1], [74, 1], // サビ高音ハモり
+            [72, 3], [69, 1], [72, 2], [71, 1], [69, 1],
+            [68, 2], [68, 1], [69, 1], [71, 2], [71, 2],
+            [69, 2], [64, 2], [64, 4]
         ];
 
-        const notes = [];
-        let currTime = 0;
-        for (const [n, len] of melody) {
-            notes.push({
-                time: currTime,
-                note: n,
-                duration: len * eighth * 0.9,
-                velocity: 95,
-                channel: 0
-            });
-            currTime += len * eighth;
+        let hTime = 64; // 9小節目からスタート
+        for (const [n, len] of harmonyPhrases) {
+            addNote(hTime, n, len, 75, 3);
+            hTime += len;
         }
 
-        let bassTime = 0;
-        for (const [n, len] of bass) {
+        // 16小節分のコード進行 & ベース設定 (1小節 = 8 eighths)
+        // [コード和音ノート配列, ベース1, ベース2]
+        const barPatterns = [
+            // 1〜8小節
+            [[68, 74, 76], 40, 47], // 1: E7 (G#4, D5, E5) / Bass E2, B2
+            [[69, 72, 76], 45, 40], // 2: Am (A4, C5, E5) / Bass A2, E2
+            [[68, 74, 76], 47, 40], // 3: E7
+            [[69, 72, 76], 45, 45], // 4: Am
+            [[65, 69, 74], 38, 45], // 5: Dm (F4, A4, D5) / Bass D2, A2
+            [[64, 69, 72], 45, 40], // 6: Am
+            [[68, 71, 76], 40, 47], // 7: E7
+            [[69, 72, 76], 45, 45], // 8: Am
+            // 9〜16小節 (リピート)
+            [[68, 74, 76], 40, 47], // 9: E7
+            [[69, 72, 76], 45, 40], // 10: Am
+            [[68, 74, 76], 47, 40], // 11: E7
+            [[69, 72, 76], 45, 45], // 12: Am
+            [[65, 69, 74], 38, 45], // 13: Dm
+            [[64, 69, 72], 45, 40], // 14: Am
+            [[68, 71, 76], 40, 47], // 15: E7
+            [[69, 72, 76], 45, 45]  // 16: Am
+        ];
+
+        barPatterns.forEach((pat, bIdx) => {
+            const barStart = bIdx * 8;
+            const [chordNotes, bass1, bass2] = pat;
+
+            // ロシアンポルカ ベースライン (ズン・ズン)
+            addNote(barStart + 0, bass1, 1.8, 80, 1);
+            addNote(barStart + 4, bass2, 1.8, 80, 1);
+
+            // ロシアンポルカ 和音裏拍伴奏 (チャッチャ・チャッチャ)
+            addChord(barStart + 2, chordNotes, 1.2, 60);
+            addChord(barStart + 3, chordNotes, 0.8, 48);
+            addChord(barStart + 6, chordNotes, 1.2, 60);
+            addChord(barStart + 7, chordNotes, 0.8, 48);
+        });
+
+        // 小節17: 華やかなキメ (終止打音フィルイン)
+        const finStart = 16 * 8; // 128 eighths
+        addNote(finStart + 0, 45, 1.8, 90, 1); // Bass A2
+        addChord(finStart + 0, [69, 72, 76, 81], 1.8, 80);
+        addNote(finStart + 4, 33, 2.5, 95, 1); // Bass A1
+        addChord(finStart + 4, [69, 72, 76, 81], 2.5, 90);
+
+        return notes.sort((a, b) => a.time - b.time);
+    }
+
+    /**
+     * トロイカ（Troika - ロシア民謡）- 疾走感と重厚和音アレンジ
+     */
+    getTroikaData() {
+        const bpm = 144;
+        const beat = 60 / bpm;
+        const eighth = beat / 2;
+
+        const notes = [];
+
+        const addNote = (timeEighth, note, durEighth, vel = 95, ch = 0) => {
             notes.push({
-                time: bassTime,
-                note: n,
-                duration: len * eighth * 0.8,
-                velocity: 70,
-                channel: 1
+                time: timeEighth * eighth,
+                note: note,
+                duration: durEighth * eighth * 0.9,
+                velocity: vel,
+                channel: ch
             });
-            bassTime += len * eighth;
+        };
+
+        const addChord = (timeEighth, chordNotes, durEighth = 1.0, vel = 60) => {
+            chordNotes.forEach(n => {
+                notes.push({
+                    time: timeEighth * eighth,
+                    note: n,
+                    duration: durEighth * eighth * 0.85,
+                    velocity: vel,
+                    channel: 2
+                });
+            });
+        };
+
+        // イントロ弱起 (2 eighths)
+        addNote(0, 64, 1.8, 85, 0); // E4 弱起「ゆー」
+
+        // 1番（Aパート・小節1〜8）メロディ
+        // offset: 2 eighths
+        const m1 = [
+            // 1: 雪の白樺 (Am)
+            [69, 2], [69, 1], [69, 1], [68, 1], [69, 1], [71, 2], // A4, A4, A4, G#4, A4, B4
+            // 2: 並木 (E7)
+            [68, 2], [64, 4], [64, 2],                             // G#4, E4, E4 (弱起)
+            // 3: 夕日が映える (C)
+            [72, 2], [72, 1], [72, 1], [71, 1], [69, 1], [71, 2], // C5, C5, C5, B4, A4, B4
+            // 4: 映える (E7)
+            [71, 6], [64, 2],                                     // B4, E4 (弱起)
+            // 5: 走れトロイカ (Am)
+            [69, 2], [71, 1], [72, 1], [71, 1], [69, 1], [64, 2], // A4, B4, C5, B4, A4, E4
+            // 6: 朗らかに (Dm)
+            [65, 2], [69, 1], [69, 1], [67, 1], [65, 1], [62, 2], // F4, A4, A4, G4, F4, D4
+            // 7: 鈴の音高く (E7)
+            [64, 2], [68, 2], [71, 2], [68, 2],                   // E4, G#4, B4, G#4
+            // 8: 高く (Am)
+            [69, 6], [76, 2]                                      // A4, E5 (2番弱起「ゆー」)
+        ];
+
+        let tTime = 2;
+        for (const [n, len] of m1) {
+            addNote(tTime, n, len, 95, 0);
+            tTime += len;
         }
+
+        // 2番（Bパート・小節9〜16）メロディ（オクターブ高音で高らかに！）
+        const m2 = [
+            // 9: 雪の白樺 (Am)
+            [81, 2], [81, 1], [81, 1], [80, 1], [81, 1], [83, 2], // A5, A5, A5, G#5, A5, B5
+            // 10: 並木 (E7)
+            [80, 2], [76, 4], [76, 2],                             // G#5, E5, E5
+            // 11: 夕日が映える (C)
+            [84, 2], [84, 1], [84, 1], [83, 1], [81, 1], [83, 2], // C6, C6, C6, B5, A5, B5
+            // 12: 映える (E7)
+            [83, 6], [76, 2],                                     // B5, E5
+            // 13: 走れトロイカ (Am)
+            [81, 2], [83, 1], [84, 1], [83, 1], [81, 1], [76, 2], // A5, B5, C6, B5, A5, E5
+            // 14: 朗らかに (Dm)
+            [77, 2], [81, 1], [81, 1], [79, 1], [77, 1], [74, 2], // F5, A5, A5, G5, F5, D5
+            // 15: 鈴の音高く (E7)
+            [76, 2], [80, 2], [83, 2], [80, 2],                   // E5, G#5, B5, G#5
+            // 16: 高く (Am)
+            [81, 4], [81, 2], [81, 2]
+        ];
+
+        for (const [n, len] of m2) {
+            addNote(tTime, n, len, 98, 0);
+            tTime += len;
+        }
+
+        // 2番の華やかなハーモニー (channel 3)
+        const h2 = [
+            // 9
+            [72, 2], [72, 1], [72, 1], [71, 1], [72, 1], [74, 2], // C5, C5, C5, B4, C5, D5
+            // 10
+            [71, 2], [68, 4], [68, 2],
+            // 11
+            [76, 2], [76, 1], [76, 1], [74, 1], [72, 1], [74, 2], // E5, E5, E5, D5, C5, D5
+            // 12
+            [74, 6], [68, 2],
+            // 13
+            [72, 2], [74, 1], [76, 1], [74, 1], [72, 1], [69, 2], // C5, D5, E5, D5, C5, A4
+            // 14
+            [69, 2], [74, 1], [74, 1], [72, 1], [69, 1], [65, 2], // A4, D5, D5, C5, A4, F4
+            // 15
+            [68, 2], [71, 2], [74, 2], [71, 2],                   // G#4, B4, D5, B4
+            // 16
+            [72, 4], [72, 2], [72, 2]
+        ];
+
+        let hTime = 66; // 9小節目の開始位置 (2 + 64)
+        for (const [n, len] of h2) {
+            addNote(hTime, n, len, 78, 3);
+            hTime += len;
+        }
+
+        // コード伴奏とベース（16小節分）
+        const troikaBars = [
+            // 1番
+            [[69, 72, 76], 45, 40], // 1: Am
+            [[68, 74, 76], 40, 47], // 2: E7
+            [[67, 72, 76], 48, 43], // 3: C
+            [[68, 74, 76], 40, 47], // 4: E7
+            [[69, 72, 76], 45, 40], // 5: Am
+            [[65, 69, 74], 38, 45], // 6: Dm
+            [[68, 71, 76], 40, 47], // 7: E7
+            [[69, 72, 76], 45, 45], // 8: Am
+            // 2番
+            [[69, 72, 76], 45, 40], // 9: Am
+            [[68, 74, 76], 40, 47], // 10: E7
+            [[67, 72, 76], 48, 43], // 11: C
+            [[68, 74, 76], 40, 47], // 12: E7
+            [[69, 72, 76], 45, 40], // 13: Am
+            [[65, 69, 74], 38, 45], // 14: Dm
+            [[68, 71, 76], 40, 47], // 15: E7
+            [[69, 72, 76], 45, 45]  // 16: Am
+        ];
+
+        troikaBars.forEach((bar, idx) => {
+            const bStart = 2 + idx * 8;
+            const [chordNotes, b1, b2] = bar;
+
+            // 軽快なベース
+            addNote(bStart + 0, b1, 1.8, 80, 1);
+            addNote(bStart + 4, b2, 1.8, 80, 1);
+
+            // リズミカルな和音カッティング
+            addChord(bStart + 2, chordNotes, 1.2, 62);
+            addChord(bStart + 3, chordNotes, 0.8, 50);
+            addChord(bStart + 6, chordNotes, 1.2, 62);
+            addChord(bStart + 7, chordNotes, 0.8, 50);
+        });
+
+        // 終止キメ打音
+        const endStart = 2 + 16 * 8; // 130 eighths
+        addNote(endStart + 0, 45, 2.0, 95, 1);
+        addChord(endStart + 0, [69, 72, 76, 81], 2.0, 85);
+        addNote(endStart + 4, 33, 2.5, 100, 1);
+        addChord(endStart + 4, [69, 72, 76, 81], 2.5, 95);
 
         return notes.sort((a, b) => a.time - b.time);
     }

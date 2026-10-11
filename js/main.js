@@ -152,10 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // テーマに応じた推奨BGM自動提案（ユーザーがカスタム再生中でなければ）
         if (sound.currentPreset !== 'custom') {
-            const recommendedBgm = theme === 'wood' ? 'woodland' : 'korobeiniki';
+            const recommendedBgm = theme === 'wood' ? 'woodland' : 'medley';
             if (bgmSelect.value !== recommendedBgm) {
                 bgmSelect.value = recommendedBgm;
                 sound.loadPresetBgm(recommendedBgm);
+                const bgmTitles = {
+                    medley: 'コロブチカ ＆ トロイカ',
+                    korobeiniki: 'コロブチカ',
+                    troika: 'トロイカ',
+                    woodland: '木漏れ日'
+                };
+                midiStatusText.textContent = `再生中: ${bgmTitles[recommendedBgm] || recommendedBgm}`;
                 if (sound.isPlayingMidi) {
                     sound.startBgm();
                 }
@@ -211,9 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
     bgmSelect.addEventListener('change', (e) => {
         sound.init();
         const choice = e.target.value;
-        if (choice === 'korobeiniki' || choice === 'woodland') {
+        const bgmTitles = {
+            medley: 'コロブチカ ＆ トロイカ',
+            korobeiniki: 'コロブチカ',
+            troika: 'トロイカ',
+            woodland: '木漏れ日'
+        };
+        if (bgmTitles[choice]) {
             sound.loadPresetBgm(choice);
-            midiStatusText.textContent = `再生中: ${choice === 'korobeiniki' ? 'コロブチカ' : '木漏れ日'}`;
+            midiStatusText.textContent = `再生中: ${bgmTitles[choice]}`;
             if (btnBgmToggle.getAttribute('data-playing') === 'true') {
                 sound.startBgm();
             }
