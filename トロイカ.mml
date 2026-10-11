@@ -1,0 +1,158 @@
+// 新規 MML 作成
+Tempo(140)
+TimeSignature(4,4)
+
+TR(1) Voice(0) o4 l4 
+//intro
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+> e2  c2 
+d2 < b2
+a8 f#8 g#8 a8 b8 a8 b8 >c8 
+d2 <g#2 
+
+>e2^e8 <a8 b8 > c8   
+d2. c8 < b8
+a2 g#2
+a2 f#8 g#8 a8 b8 
+
+> e2  c2 
+d2 < b2
+a8 f#8 g#8 a8 b8 a8 b8 >c8 
+d2 <g#2 
+
+>e2^e8 <a8 b8 > c8   
+d2. c8 < b8
+a2 g#2
+a2 f#8 g#8 a8 b8 
+
+//Bmelo
+o5 
+a2 a16 r16 a16r16 g#16r16 a16r16 
+b4. g#16r16 e2 
+> c4 < a4 c4 d4 
+e2. e4
+
+a4. b8 > c16r16 < b16r16 a16r16 e16r16 
+d4. f8 a4 b16r16 a16r16 
+e4. f8 e16r16 d16r16 < b16r16 > c16r16 
+< a2. > e4 
+
+//B'melo 
+
+a2 a16 r16 a16r16 g#16r16 a16r16 
+b4. g#16r16 e2 
+> c4 < a4 c4 d4 
+e2. e4
+
+a4. b8 > c16r16 < b16r16 a16r16 e16r16 
+d4. f8 a4 b16r16 a16r16 
+e4. f8 e16r16 d16r16 < b16r16 > c16r16 
+< a2. > e4 
+
+TR(2) o4 l8
+//intro
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8
+
+//Amelo
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8
+
+//Bmelo 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+//B'melo 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+
+TR(3) CH(10) Voice(0) /* ドラムセット */ 
+//intro
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Bmelo
+r8 < g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 

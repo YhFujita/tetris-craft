@@ -330,15 +330,24 @@ class SoundController {
                 gain.gain.exponentialRampToValueAtTime(vel * 0.15, time + 0.1);
                 gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.6));
             } else if (channel === 2) {
-                // コード伴奏: 軽やかなポクポクした木琴スタッカート
+                // コード・アルペジオ伴奏: 軽やかなポクポクした木琴音
                 osc.type = 'sine';
                 filter.type = 'lowpass';
                 filter.frequency.setValueAtTime(freq * 2.5, time);
 
                 gain.gain.setValueAtTime(0.001, time);
                 gain.gain.linearRampToValueAtTime(vel * 0.22, time + 0.008);
-                gain.gain.exponentialRampToValueAtTime(vel * 0.05, time + 0.06);
-                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.22));
+                gain.gain.exponentialRampToValueAtTime(vel * 0.08, time + 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.35));
+            } else if (channel === 9) {
+                // ドラム / ウッドブロック風リズム
+                osc.type = 'sine';
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1200, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.25, time + 0.003);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
             } else {
                 // メロディ & ハーモニー
                 osc.type = 'sine';
@@ -364,15 +373,16 @@ class SoundController {
                 gain.gain.setValueAtTime(vel * 0.2, time + Math.max(0.05, duration - 0.03));
                 gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
             } else if (channel === 2) {
-                // 和音コード伴奏: 歯切れの良いスタッカート（裏拍のアコーディオン/バラライカ的刻み）
+                // 和音・アルペジオ伴奏: 歯切れよくかつ滑らかに響く矩形波伴奏
                 osc.type = 'square';
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(2600, time);
+                filter.frequency.setValueAtTime(2400, time);
 
                 gain.gain.setValueAtTime(0.001, time);
                 gain.gain.linearRampToValueAtTime(vel * 0.15, time + 0.008);
-                gain.gain.exponentialRampToValueAtTime(vel * 0.08, time + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(duration, 0.2));
+                gain.gain.exponentialRampToValueAtTime(vel * 0.09, time + 0.05);
+                gain.gain.setValueAtTime(vel * 0.09, time + Math.max(0.04, duration - 0.03));
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
             } else if (channel === 3) {
                 // ハーモニー/対旋律: 豊かな倍音を持つノコギリ波
                 osc.type = 'sawtooth';
@@ -384,9 +394,18 @@ class SoundController {
                 gain.gain.exponentialRampToValueAtTime(vel * 0.1, time + 0.05);
                 gain.gain.setValueAtTime(vel * 0.1, time + Math.max(0.05, duration - 0.04));
                 gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+            } else if (channel === 9) {
+                // パーカッション / ハイハット: 高域三角波クリックによる歯切れ良いレトロリズム
+                osc.type = 'triangle';
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(3200, time);
+
+                gain.gain.setValueAtTime(0.001, time);
+                gain.gain.linearRampToValueAtTime(vel * 0.16, time + 0.003);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
             } else {
                 // チャンネル0: メインリードメロディ（クリアな矩形波）
-                osc.type = channel === 9 ? 'triangle' : 'square';
+                osc.type = 'square';
                 filter.type = 'lowpass';
                 filter.frequency.setValueAtTime(3600, time);
 
