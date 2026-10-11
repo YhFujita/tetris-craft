@@ -709,163 +709,317 @@ class SoundController {
     }
 
     /**
-     * トロイカ（Troika - ロシア民謡）- 疾走感と重厚和音アレンジ
+     * MML (Music Macro Language) テキストをノート配列に変換
+     */
+    parseMmlToNotes(mmlText) {
+        const lines = mmlText.split(/\r?\n/);
+        let tempo = 140;
+
+        const tracksText = {};
+        let currentTr = null;
+
+        for (let rawLine of lines) {
+            let line = rawLine.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/, '').trim();
+            if (!line) continue;
+
+            const tempoMatch = line.match(/Tempo\((\d+)\)/i);
+            if (tempoMatch) tempo = parseInt(tempoMatch[1], 10);
+
+            line = line.replace(/Voice\([^)]*\)/gi, ' ');
+            line = line.replace(/TimeSignature\([^)]*\)/gi, ' ');
+            line = line.replace(/Tempo\([^)]*\)/gi, ' ');
+            line = line.replace(/CH\([^)]*\)/gi, ' ');
+
+            const trMatches = line.split(/(TR\(\d+\))/i);
+            for (let part of trMatches) {
+                const m = part.match(/TR\((\d+)\)/i);
+                if (m) {
+                    currentTr = parseInt(m[1], 10);
+                    if (!tracksText[currentTr]) tracksText[currentTr] = [];
+                } else if (currentTr) {
+                    tracksText[currentTr].push(part);
+                }
+            }
+        }
+
+        const beatDuration = 60 / tempo;
+        const allNotes = [];
+
+        const noteToSemitone = {
+            'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11
+        };
+
+        const parseDuration = (str, defaultLen) => {
+            let s = str.replace(/^[a-z#\+\-]+/, '');
+            if (!s) return (4 / defaultLen) * beatDuration;
+            const m = s.match(/^(\d+)(\.*)/);
+            if (m) {
+                let lenVal = parseInt(m[1], 10);
+                let dots = m[2].length;
+                let dur = (4 / lenVal) * beatDuration;
+                let add = dur / 2;
+                for (let i = 0; i < dots; i++) {
+                    dur += add;
+                    add /= 2;
+                }
+                return dur;
+            }
+            return (4 / defaultLen) * beatDuration;
+        };
+
+        for (const [trStr, textParts] of Object.entries(tracksText)) {
+            const tr = parseInt(trStr, 10);
+            const fullText = textParts.join(' ');
+            const tokens = fullText.match(/o\d+|l\d+|[><]|[a-g][#\+\-]?\d*(?:\.\d*)*(?:\^[a-g][#\+\-]?\d*(?:\.\d*)*|\^\d+(?:\.\d*)*)*|r\d*(?:\.\d*)*(?:\^\d+(?:\.\d*)*)*/gi);
+            if (!tokens) continue;
+
+            let octave = 4;
+            let defaultLen = 4;
+            let currentTime = 0;
+
+            for (let token of tokens) {
+                const lower = token.toLowerCase();
+
+                if (lower.startsWith('o')) {
+                    octave = parseInt(lower.slice(1), 10);
+                } else if (lower.startsWith('l')) {
+                    defaultLen = parseInt(lower.slice(1), 10);
+                } else if (lower === '>') {
+                    octave++;
+                } else if (lower === '<') {
+                    octave--;
+                } else if (lower.startsWith('r')) {
+                    const dur = parseDuration(lower, defaultLen);
+                    currentTime += dur;
+                } else if (/^[a-g]/.test(lower)) {
+                    const parts = lower.split('^');
+                    let totalDur = 0;
+                    let noteName = '';
+
+                    parts.forEach((p, idx) => {
+                        if (idx === 0) {
+                            const m = p.match(/^([a-g][#\+\-]?)(.*)$/);
+                            noteName = m[1];
+                            totalDur += parseDuration(m[2] ? 'n' + m[2] : '', defaultLen);
+                        } else {
+                            const m = p.match(/^([a-g][#\+\-]?)?(.*)$/);
+                            totalDur += parseDuration(m[2] ? 'n' + m[2] : '', defaultLen);
+                        }
+                    });
+
+                    const baseNote = noteName[0];
+                    let semi = noteToSemitone[baseNote];
+                    if (noteName.includes('#') || noteName.includes('+')) semi++;
+                    if (noteName.includes('-')) semi--;
+
+                    const midiNote = (octave + 1) * 12 + semi;
+
+                    let channel = 0;
+                    let velocity = 95;
+
+                    if (tr === 1) {
+                        channel = 0; // 主旋律リード
+                        velocity = 95;
+                    } else if (tr === 2) {
+                        // TR(2) は低音(<59)をベース(channel 1)、それ以上をアルペジオ和音(channel 2)に割り当てて立体化
+                        if (midiNote < 59) {
+                            channel = 1; // ベース
+                            velocity = 80;
+                        } else {
+                            channel = 2; // アルペジオ和音伴奏
+                            velocity = 65;
+                        }
+                    } else if (tr === 3) {
+                        channel = 9; // パーカッション (ハイハット)
+                        velocity = 70;
+                    }
+
+                    allNotes.push({
+                        time: currentTime,
+                        note: midiNote,
+                        duration: totalDur * 0.9,
+                        velocity: velocity,
+                        channel: channel
+                    });
+
+                    currentTime += totalDur;
+                }
+            }
+        }
+
+        return allNotes.sort((a, b) => a.time - b.time);
+    }
+
+    /**
+     * トロイカ.mml の楽譜データ
+     */
+    getTroikaMml() {
+        return `Tempo(140)
+TimeSignature(4,4)
+
+TR(1) Voice(0) o4 l4 
+//intro
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+> e2  c2 
+d2 < b2
+a8 f#8 g#8 a8 b8 a8 b8 >c8 
+d2 <g#2 
+
+>e2^e8 <a8 b8 > c8   
+d2. c8 < b8
+a2 g#2
+a2 f#8 g#8 a8 b8 
+
+> e2  c2 
+d2 < b2
+a8 f#8 g#8 a8 b8 a8 b8 >c8 
+d2 <g#2 
+
+>e2^e8 <a8 b8 > c8   
+d2. c8 < b8
+a2 g#2
+a2 f#8 g#8 a8 b8 
+
+//Bmelo
+o5 
+a2 a16 r16 a16r16 g#16r16 a16r16 
+b4. g#16r16 e2 
+> c4 < a4 c4 d4 
+e2. e4
+
+a4. b8 > c16r16 < b16r16 a16r16 e16r16 
+d4. f8 a4 b16r16 a16r16 
+e4. f8 e16r16 d16r16 < b16r16 > c16r16 
+< a2. > e4 
+
+//B'melo 
+
+a2 a16 r16 a16r16 g#16r16 a16r16 
+b4. g#16r16 e2 
+> c4 < a4 c4 d4 
+e2. e4
+
+a4. b8 > c16r16 < b16r16 a16r16 e16r16 
+d4. f8 a4 b16r16 a16r16 
+e4. f8 e16r16 d16r16 < b16r16 > c16r16 
+< a2. > e4 
+
+TR(2) o4 l8
+//intro
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+//Amelo
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+//Bmelo 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+//B'melo 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < a8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+
+< a8 > e8 c8 e8 < a8 > e8 c8 e8 
+<b8 > f8 d8 f8 < b8 > f8 d8 f8
+< g#8 > e8 < b8 > e8 < g#8 > e8 < b8 > e8 
+< a8 > e8 c8 e8 < g#8 > e8 < b8 > e8 
+
+TR(3) CH(10) Voice(0) /* ドラムセット */ 
+//intro
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Amelo
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+r4 r4 r4 r4 
+
+//Bmelo
+r8 < g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8 
+r8 g#8 r8 g#8 r8 g#8 r8 g#8`;
+    }
+
+    /**
+     * トロイカ（Troika）- トロイカ.mml に基づく正式楽譜データ
      */
     getTroikaData() {
-        const bpm = 144;
-        const beat = 60 / bpm;
-        const eighth = beat / 2;
-
-        const notes = [];
-
-        const addNote = (timeEighth, note, durEighth, vel = 95, ch = 0) => {
-            notes.push({
-                time: timeEighth * eighth,
-                note: note,
-                duration: durEighth * eighth * 0.9,
-                velocity: vel,
-                channel: ch
-            });
-        };
-
-        const addChord = (timeEighth, chordNotes, durEighth = 1.0, vel = 60) => {
-            chordNotes.forEach(n => {
-                notes.push({
-                    time: timeEighth * eighth,
-                    note: n,
-                    duration: durEighth * eighth * 0.85,
-                    velocity: vel,
-                    channel: 2
-                });
-            });
-        };
-
-        // イントロ弱起 (2 eighths)
-        addNote(0, 64, 1.8, 85, 0); // E4 弱起「ゆー」
-
-        // 1番（Aパート・小節1〜8）メロディ
-        // offset: 2 eighths
-        const m1 = [
-            // 1: 雪の白樺 (Am)
-            [69, 2], [69, 1], [69, 1], [68, 1], [69, 1], [71, 2], // A4, A4, A4, G#4, A4, B4
-            // 2: 並木 (E7)
-            [68, 2], [64, 4], [64, 2],                             // G#4, E4, E4 (弱起)
-            // 3: 夕日が映える (C)
-            [72, 2], [72, 1], [72, 1], [71, 1], [69, 1], [71, 2], // C5, C5, C5, B4, A4, B4
-            // 4: 映える (E7)
-            [71, 6], [64, 2],                                     // B4, E4 (弱起)
-            // 5: 走れトロイカ (Am)
-            [69, 2], [71, 1], [72, 1], [71, 1], [69, 1], [64, 2], // A4, B4, C5, B4, A4, E4
-            // 6: 朗らかに (Dm)
-            [65, 2], [69, 1], [69, 1], [67, 1], [65, 1], [62, 2], // F4, A4, A4, G4, F4, D4
-            // 7: 鈴の音高く (E7)
-            [64, 2], [68, 2], [71, 2], [68, 2],                   // E4, G#4, B4, G#4
-            // 8: 高く (Am)
-            [69, 6], [76, 2]                                      // A4, E5 (2番弱起「ゆー」)
-        ];
-
-        let tTime = 2;
-        for (const [n, len] of m1) {
-            addNote(tTime, n, len, 95, 0);
-            tTime += len;
+        if (!this._cachedTroikaNotes) {
+            this._cachedTroikaNotes = this.parseMmlToNotes(this.getTroikaMml());
         }
-
-        // 2番（Bパート・小節9〜16）メロディ（オクターブ高音で高らかに！）
-        const m2 = [
-            // 9: 雪の白樺 (Am)
-            [81, 2], [81, 1], [81, 1], [80, 1], [81, 1], [83, 2], // A5, A5, A5, G#5, A5, B5
-            // 10: 並木 (E7)
-            [80, 2], [76, 4], [76, 2],                             // G#5, E5, E5
-            // 11: 夕日が映える (C)
-            [84, 2], [84, 1], [84, 1], [83, 1], [81, 1], [83, 2], // C6, C6, C6, B5, A5, B5
-            // 12: 映える (E7)
-            [83, 6], [76, 2],                                     // B5, E5
-            // 13: 走れトロイカ (Am)
-            [81, 2], [83, 1], [84, 1], [83, 1], [81, 1], [76, 2], // A5, B5, C6, B5, A5, E5
-            // 14: 朗らかに (Dm)
-            [77, 2], [81, 1], [81, 1], [79, 1], [77, 1], [74, 2], // F5, A5, A5, G5, F5, D5
-            // 15: 鈴の音高く (E7)
-            [76, 2], [80, 2], [83, 2], [80, 2],                   // E5, G#5, B5, G#5
-            // 16: 高く (Am)
-            [81, 4], [81, 2], [81, 2]
-        ];
-
-        for (const [n, len] of m2) {
-            addNote(tTime, n, len, 98, 0);
-            tTime += len;
-        }
-
-        // 2番の華やかなハーモニー (channel 3)
-        const h2 = [
-            // 9
-            [72, 2], [72, 1], [72, 1], [71, 1], [72, 1], [74, 2], // C5, C5, C5, B4, C5, D5
-            // 10
-            [71, 2], [68, 4], [68, 2],
-            // 11
-            [76, 2], [76, 1], [76, 1], [74, 1], [72, 1], [74, 2], // E5, E5, E5, D5, C5, D5
-            // 12
-            [74, 6], [68, 2],
-            // 13
-            [72, 2], [74, 1], [76, 1], [74, 1], [72, 1], [69, 2], // C5, D5, E5, D5, C5, A4
-            // 14
-            [69, 2], [74, 1], [74, 1], [72, 1], [69, 1], [65, 2], // A4, D5, D5, C5, A4, F4
-            // 15
-            [68, 2], [71, 2], [74, 2], [71, 2],                   // G#4, B4, D5, B4
-            // 16
-            [72, 4], [72, 2], [72, 2]
-        ];
-
-        let hTime = 66; // 9小節目の開始位置 (2 + 64)
-        for (const [n, len] of h2) {
-            addNote(hTime, n, len, 78, 3);
-            hTime += len;
-        }
-
-        // コード伴奏とベース（16小節分）
-        const troikaBars = [
-            // 1番
-            [[69, 72, 76], 45, 40], // 1: Am
-            [[68, 74, 76], 40, 47], // 2: E7
-            [[67, 72, 76], 48, 43], // 3: C
-            [[68, 74, 76], 40, 47], // 4: E7
-            [[69, 72, 76], 45, 40], // 5: Am
-            [[65, 69, 74], 38, 45], // 6: Dm
-            [[68, 71, 76], 40, 47], // 7: E7
-            [[69, 72, 76], 45, 45], // 8: Am
-            // 2番
-            [[69, 72, 76], 45, 40], // 9: Am
-            [[68, 74, 76], 40, 47], // 10: E7
-            [[67, 72, 76], 48, 43], // 11: C
-            [[68, 74, 76], 40, 47], // 12: E7
-            [[69, 72, 76], 45, 40], // 13: Am
-            [[65, 69, 74], 38, 45], // 14: Dm
-            [[68, 71, 76], 40, 47], // 15: E7
-            [[69, 72, 76], 45, 45]  // 16: Am
-        ];
-
-        troikaBars.forEach((bar, idx) => {
-            const bStart = 2 + idx * 8;
-            const [chordNotes, b1, b2] = bar;
-
-            // 軽快なベース
-            addNote(bStart + 0, b1, 1.8, 80, 1);
-            addNote(bStart + 4, b2, 1.8, 80, 1);
-
-            // リズミカルな和音カッティング
-            addChord(bStart + 2, chordNotes, 1.2, 62);
-            addChord(bStart + 3, chordNotes, 0.8, 50);
-            addChord(bStart + 6, chordNotes, 1.2, 62);
-            addChord(bStart + 7, chordNotes, 0.8, 50);
-        });
-
-        // 終止キメ打音
-        const endStart = 2 + 16 * 8; // 130 eighths
-        addNote(endStart + 0, 45, 2.0, 95, 1);
-        addChord(endStart + 0, [69, 72, 76, 81], 2.0, 85);
-        addNote(endStart + 4, 33, 2.5, 100, 1);
-        addChord(endStart + 4, [69, 72, 76, 81], 2.5, 95);
-
-        return notes.sort((a, b) => a.time - b.time);
+        return this._cachedTroikaNotes;
     }
 
     /**
